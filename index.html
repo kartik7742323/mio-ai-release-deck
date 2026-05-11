@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Outcomes Dashboard · Revamp Release</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#6d28d9;
+  --primary-light:#a78bfa;
+  --secondary:#2563eb;
+  --success:#10b981;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --text:#0d1b2a;
+  --text-muted:#6b7280;
+  --border:#e5e7eb;
+  --bg-slide:#fafbfc;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,sans-serif;background:#0a0a14;color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* ─── Deck ─── */
+.deck{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+.slide{
+  position:absolute;width:min(1320px,96vw);height:min(760px,92vh);
+  background:var(--bg-slide);border-radius:20px;overflow:hidden;display:none;
+  box-shadow:0 25px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05);
+}
+.slide.active{display:flex;flex-direction:column;animation:slideIn .5s cubic-bezier(.16,1,.3,1)}
+@keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── Shared header ─── */
+.slide-content{
+  flex:1;padding:42px 52px;display:flex;flex-direction:column;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 90% 10%,rgba(109,40,217,.04) 0%,transparent 40%),
+    radial-gradient(circle at 10% 90%,rgba(37,99,235,.04) 0%,transparent 40%),
+    var(--bg-slide);
+}
+.slide-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.slide-tag{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text-muted);
+}
+.slide-tag-num{font-weight:700;color:var(--primary);background:rgba(109,40,217,.08);padding:4px 8px;border-radius:5px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--primary);margin-bottom:10px;
+}
+.eyebrow::before{content:'';width:24px;height:2px;background:var(--primary);border-radius:2px}
+
+/* ─── SLIDE 1: PROBLEM ─── */
+.s1-headline{margin-bottom:18px}
+.s1-headline h2{font-size:42px;font-weight:800;line-height:1;letter-spacing:-1.2px;margin-bottom:8px}
+.s1-headline h2 .accent{
+  background:linear-gradient(135deg,#ef4444 0%,#f97316 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.s1-headline p{font-size:14px;color:var(--text-muted);line-height:1.5;max-width:780px}
+
+.s1-body{display:grid;grid-template-columns:1.5fr 1fr;gap:24px;flex:1;min-height:0}
+.s1-screenshot{
+  position:relative;border-radius:12px;overflow:hidden;
+  border:1px solid var(--border);background:#fff;
+  box-shadow:0 12px 32px rgba(0,0,0,.08);
+}
+.s1-screenshot img{width:100%;height:100%;object-fit:cover;object-position:top}
+.s1-screenshot-label{
+  position:absolute;top:12px;left:12px;
+  background:rgba(15,15,30,.85);backdrop-filter:blur(8px);
+  color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;
+  padding:5px 10px;border-radius:6px;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
+}
+.s1-screenshot-label::before{content:'';width:6px;height:6px;border-radius:50%;background:#ef4444}
+.s1-issues{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.s1-issues-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+.issue{
+  display:flex;gap:12px;padding:12px 14px;
+  background:#fff;border:1px solid var(--border);border-radius:10px;
+  border-left:3px solid #ef4444;
+}
+.issue-icon{
+  width:26px;height:26px;border-radius:7px;background:#fef2f2;color:#dc2626;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:800;font-size:14px;
+}
+.issue-text strong{display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.issue-text span{font-size:11.5px;color:var(--text-muted);line-height:1.45}
+
+/* ─── SLIDE 2: GOAL ─── */
+.s2-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px}
+.s2-top h2{font-size:50px;font-weight:800;line-height:1;letter-spacing:-1.5px;margin-bottom:12px}
+.s2-top h2 .accent{
+  background:linear-gradient(135deg,#10b981 0%,#06b6d4 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.s2-top p{font-size:15px;color:var(--text-muted);line-height:1.55;max-width:640px}
+.s2-shift{
+  display:flex;align-items:center;gap:14px;
+  background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 20px;
+}
+.shift-from,.shift-to{display:flex;flex-direction:column;gap:2px}
+.shift-lbl{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700}
+.shift-val{font-size:14px;font-weight:700;letter-spacing:-.2px}
+.shift-from .shift-val{color:#dc2626;text-decoration:line-through;text-decoration-thickness:1.5px}
+.shift-to .shift-val{color:var(--success)}
+.shift-arrow{color:var(--primary);font-size:18px;font-weight:800}
+
+.s2-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1}
+.goal-card{
+  background:#fff;border:1px solid var(--border);border-radius:16px;padding:24px;
+  display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;
+  transition:all .3s;
+}
+.goal-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.08);border-color:#a78bfa}
+.goal-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--primary) 0%,var(--secondary) 100%);
+}
+.gc-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--primary);font-weight:700;letter-spacing:1px}
+.gc-icon{
+  width:44px;height:44px;border-radius:11px;
+  background:linear-gradient(135deg,#ede9fe 0%,#dbeafe 100%);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.gc-title{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.3px;line-height:1.2}
+.gc-text{font-size:13px;color:var(--text-muted);line-height:1.55;flex:1}
+.gc-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;color:var(--primary);
+  background:#ede9fe;padding:5px 10px;border-radius:6px;align-self:flex-start;
+}
+
+/* ─── SLIDE 3: FEATURE & SOLUTION ─── */
+.s3-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px}
+.s3-top h2{font-size:42px;font-weight:800;line-height:1;letter-spacing:-1.2px;margin-bottom:6px}
+.s3-top h2 .accent{
+  background:linear-gradient(135deg,var(--primary) 0%,var(--secondary) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.s3-top p{font-size:13px;color:var(--text-muted);line-height:1.5;max-width:680px}
+.s3-rollout{
+  display:flex;flex-direction:column;gap:6px;
+  background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;
+  box-shadow:0 4px 12px rgba(109,40,217,.08);
+}
+.s3-rollout-title{
+  font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:2px;
+}
+.rollout-row{display:flex;align-items:center;gap:10px}
+.rollout-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rollout-row.partial .rollout-dot{background:#f59e0b;box-shadow:0 0 8px #f59e0b}
+.rollout-row.full .rollout-dot{background:#10b981;box-shadow:0 0 8px #10b981;animation:pulse 2s infinite}
+.rollout-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text);min-width:54px}
+.rollout-row.partial .rollout-lbl{color:#b45309}
+.rollout-row.full .rollout-lbl{color:#047857}
+.rollout-date{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--text);margin-left:auto}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.s3-body{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;flex:1;min-height:0}
+.s3-preview{
+  position:relative;border-radius:12px;overflow:hidden;
+  border:1px solid var(--border);background:#fff;
+  box-shadow:0 12px 32px rgba(109,40,217,.12);
+}
+.s3-preview iframe{
+  width:200%;height:200%;border:none;
+  transform:scale(.5);transform-origin:top left;
+  pointer-events:none;
+}
+.s3-preview-label{
+  position:absolute;top:12px;left:12px;
+  background:linear-gradient(135deg,#6d28d9 0%,#2563eb 100%);
+  color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;
+  padding:5px 10px;border-radius:6px;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;z-index:2;
+}
+.s3-preview-label::before{content:'';width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981}
+
+.s3-features{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.s3-features-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+.feat{
+  display:flex;gap:12px;padding:11px 14px;
+  background:#fff;border:1px solid var(--border);border-radius:10px;
+  border-left:3px solid var(--primary);
+  transition:all .25s;
+}
+.feat:hover{transform:translateX(3px);border-left-color:var(--secondary)}
+.feat-icon{
+  width:28px;height:28px;border-radius:7px;color:#fff;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;
+}
+.fi-1{background:linear-gradient(135deg,#8b5cf6,#6366f1)}
+.fi-2{background:linear-gradient(135deg,#3b82f6,#06b6d4)}
+.fi-3{background:linear-gradient(135deg,#10b981,#059669)}
+.fi-4{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.fi-5{background:linear-gradient(135deg,#ec4899,#8b5cf6)}
+.feat-text{flex:1}
+.feat-text strong{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.feat-text strong .new{
+  font-size:8px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+  background:#d1fae5;color:#059669;padding:2px 5px;border-radius:3px;
+}
+.feat-text span{font-size:11.5px;color:var(--text-muted);line-height:1.45}
+
+/* ─── Chrome ─── */
+.deck-chrome{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:100;
+  display:flex;align-items:center;gap:8px;
+  background:rgba(20,20,40,.7);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px;
+}
+.chrome-btn{
+  width:36px;height:36px;border-radius:8px;border:none;
+  background:rgba(255,255,255,.05);color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-size:16px;
+}
+.chrome-btn:hover{background:rgba(255,255,255,.1)}
+.chrome-counter{padding:0 14px;color:#c4b5fd;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;min-width:60px;text-align:center}
+.chrome-dots{display:flex;gap:5px;padding:0 8px}
+.chrome-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:all .15s}
+.chrome-dot.active{background:#a78bfa;width:20px;border-radius:3px}
+
+.deck-brand{
+  position:fixed;top:24px;left:24px;z-index:100;
+  display:flex;align-items:center;gap:10px;
+  background:rgba(20,20,40,.7);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 14px;
+  color:#fff;font-size:12px;font-weight:600;
+}
+.deck-brand-dot{width:8px;height:8px;border-radius:50%;background:#a78bfa;box-shadow:0 0 12px #a78bfa}
+
+.hint{
+  position:fixed;top:24px;right:24px;z-index:100;
+  display:flex;align-items:center;gap:6px;
+  color:rgba(255,255,255,.5);font-size:11px;
+  background:rgba(20,20,40,.7);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 12px;
+}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<div class="deck-brand">
+  <div class="deck-brand-dot"></div>
+  <span>Mio AI · Outcomes Dashboard Revamp</span>
+</div>
+<div class="hint">Use <span class="kbd">←</span> <span class="kbd">→</span> to navigate</div>
+
+<div class="deck">
+
+  <!-- ═══════════ SLIDE 1: PROBLEM ═══════════ -->
+  <section class="slide active">
+    <div class="slide-content">
+      <div class="slide-header">
+        <div class="slide-tag"><span class="slide-tag-num">01</span> Problem Statement</div>
+        <div class="slide-tag">Outcomes Dashboard · Revamp</div>
+      </div>
+
+      <div class="s1-headline">
+        <div class="eyebrow">Where we started</div>
+        <h2>The old dashboard tracked <span class="accent">activity, not outcomes.</span></h2>
+        <p>Teams could see how many calls were dialed and connected — but couldn't answer the question that actually matters: <strong style="color:var(--text)">"Did we qualify or reactivate any leads?"</strong></p>
+      </div>
+
+      <div class="s1-body">
+        <div class="s1-screenshot">
+          <div class="s1-screenshot-label">Before · Old Dashboard</div>
+          <img src="file:///C:/Users/Kartik/Downloads/screencapture-m1v4lw65l7-in1-nopaperforms-io-backend-agents-ai-voice-dashboard-2026-05-11-13_36_31.png" alt="Old dashboard"/>
+        </div>
+
+        <div class="s1-issues">
+          <div class="s1-issues-title">What was missing</div>
+          <div class="issue">
+            <div class="issue-icon">!</div>
+            <div class="issue-text">
+              <strong>No outcome metrics</strong>
+              <span>Only "Dialed" and "Connected" — no view into leads qualified or reactivated.</span>
+            </div>
+          </div>
+          <div class="issue">
+            <div class="issue-icon">!</div>
+            <div class="issue-text">
+              <strong>No efficiency signals</strong>
+              <span>No avg attempts-per-contact to gauge how hard the agent is working per lead.</span>
+            </div>
+          </div>
+          <div class="issue">
+            <div class="issue-icon">!</div>
+            <div class="issue-text">
+              <strong>No "when to call" insights</strong>
+              <span>No heatmap or peak-hour data — teams had to guess the best calling windows.</span>
+            </div>
+          </div>
+          <div class="issue">
+            <div class="issue-icon">!</div>
+            <div class="issue-text">
+              <strong>No agent-level goals</strong>
+              <span>Per-agent view showed call counts only — no success rate against an LQ or LR goal.</span>
+            </div>
+          </div>
+          <div class="issue">
+            <div class="issue-icon">!</div>
+            <div class="issue-text">
+              <strong>No period comparisons</strong>
+              <span>No deltas vs prior period or YoY — impossible to tell if performance was improving.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ SLIDE 2: GOAL ═══════════ -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header">
+        <div class="slide-tag"><span class="slide-tag-num">02</span> Goal</div>
+        <div class="slide-tag">Outcomes Dashboard · Revamp</div>
+      </div>
+
+      <div class="s2-top">
+        <div>
+          <div class="eyebrow">Why we revamped it</div>
+          <h2>Move from call counts<br/>to <span class="accent">real outcomes.</span></h2>
+          <p>Make the dashboard answer the questions teams actually ask — what was achieved, by which agent, at the best times, and how it compares to before.</p>
+        </div>
+        <div class="s2-shift">
+          <div class="shift-from">
+            <div class="shift-lbl">From</div>
+            <div class="shift-val">Activity tracking</div>
+          </div>
+          <div class="shift-arrow">→</div>
+          <div class="shift-to">
+            <div class="shift-lbl">To</div>
+            <div class="shift-val">Outcomes & insights</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="s2-cards">
+        <div class="goal-card">
+          <div class="gc-num">// GOAL 01</div>
+          <div class="gc-icon">🎯</div>
+          <div class="gc-title">Surface what was achieved</div>
+          <div class="gc-text">Replace "Dialed / Connected" with outcome-first KPIs: Goal Achieved, Connection %, Avg Attempts per Contact, and Unique Contacts Attempted.</div>
+          <div class="gc-tag">Outcome-first</div>
+        </div>
+        <div class="goal-card">
+          <div class="gc-num">// GOAL 02</div>
+          <div class="gc-icon">🔍</div>
+          <div class="gc-title">Make insights actionable</div>
+          <div class="gc-text">Show users <em>when</em> to call, <em>which</em> agent performs best, and <em>where</em> to focus — not just the raw numbers.</div>
+          <div class="gc-tag">Actionable</div>
+        </div>
+        <div class="goal-card">
+          <div class="gc-num">// GOAL 03</div>
+          <div class="gc-icon">📐</div>
+          <div class="gc-title">Give every metric context</div>
+          <div class="gc-text">Add period-over-period deltas, tooltips that define each metric, and per-agent breakdowns so the numbers are never read in isolation.</div>
+          <div class="gc-tag">With context</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ SLIDE 3: FEATURES & SOLUTION ═══════════ -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header">
+        <div class="slide-tag"><span class="slide-tag-num">03</span> Features & Solution</div>
+        <div class="slide-tag">Outcomes Dashboard · Revamp</div>
+      </div>
+
+      <div class="s3-top">
+        <div>
+          <div class="eyebrow">The revamp · shipping now</div>
+          <h2>An outcomes dashboard <span class="accent">teams actually use.</span></h2>
+          <p>A single view across every AI Voice agent — outcome KPIs, per-agent success, time-of-day heatmaps, and auto-generated insights.</p>
+        </div>
+        <div class="s3-rollout">
+          <div class="s3-rollout-title">Rollout Schedule</div>
+          <div class="rollout-row partial">
+            <span class="rollout-dot"></span>
+            <span class="rollout-lbl">Partial</span>
+            <span class="rollout-date">May 11, 2026</span>
+          </div>
+          <div class="rollout-row full">
+            <span class="rollout-dot"></span>
+            <span class="rollout-lbl">Full · all infras</span>
+            <span class="rollout-date">May 13, 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="s3-body">
+        <div class="s3-preview">
+          <div class="s3-preview-label">After · New Dashboard</div>
+          <iframe src="dashboard.html" title="New Outcomes Dashboard"></iframe>
+        </div>
+
+        <div class="s3-features">
+          <div class="s3-features-title">What's new</div>
+          <div class="feat">
+            <div class="feat-icon fi-1">⊞</div>
+            <div class="feat-text">
+              <strong>Outcome-first KPIs <span class="new">NEW</span></strong>
+              <span>Goal Achieved, Connection %, Avg Attempts/Contact, Unique Contacts — with deltas.</span>
+            </div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon fi-2">≡</div>
+            <div class="feat-text">
+              <strong>Per-agent success table <span class="new">NEW</span></strong>
+              <span>Each agent's goal (LQ/LR), unique contacts, connection rate, and goal achievement.</span>
+            </div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon fi-3">▦</div>
+            <div class="feat-text">
+              <strong>Call Connection Heatmap <span class="new">NEW</span></strong>
+              <span>See peak hours and best days at a glance — auto-generated insights point to the next action.</span>
+            </div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon fi-4">↗</div>
+            <div class="feat-text">
+              <strong>Outcomes Over Time <span class="new">NEW</span></strong>
+              <span>Trend chart across 7d / 30d / 90d / month / custom — multi-agent comparison built in.</span>
+            </div>
+          </div>
+          <div class="feat">
+            <div class="feat-icon fi-5">ⓘ</div>
+            <div class="feat-text">
+              <strong>Metric tooltips &amp; smart filters <span class="new">NEW</span></strong>
+              <span>Every KPI now has a definition. Filter by agent + date range from a single top-bar.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="deck-chrome">
+  <button class="chrome-btn" onclick="prev()">←</button>
+  <div class="chrome-dots" id="dots"></div>
+  <div class="chrome-counter"><span id="cur">1</span> / <span id="tot">3</span></div>
+  <button class="chrome-btn" onclick="next()">→</button>
+</div>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+let idx=0;
+const dotsEl=document.getElementById('dots');
+slides.forEach((_,i)=>{
+  const d=document.createElement('div');
+  d.className='chrome-dot'+(i===0?' active':'');
+  d.onclick=()=>go(i);
+  dotsEl.appendChild(d);
+});
+document.getElementById('tot').textContent=total;
+function go(n){
+  slides[idx].classList.remove('active');
+  dotsEl.children[idx].classList.remove('active');
+  idx=(n+total)%total;
+  slides[idx].classList.add('active');
+  dotsEl.children[idx].classList.add('active');
+  document.getElementById('cur').textContent=idx+1;
+}
+function next(){go(idx+1)}
+function prev(){go(idx-1)}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')next();
+  if(e.key==='ArrowLeft')prev();
+});
+</script>
+
+</body>
+</html>

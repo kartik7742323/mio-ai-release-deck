@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mio AI – Outcomes Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#f5f6f8;color:#0d1b2a;display:flex;min-height:100vh}
+
+/* ─── Sidebar ─── */
+.sidebar{
+  width:60px;background:#1a1d2e;display:flex;flex-direction:column;
+  align-items:center;padding:18px 0;gap:6px;position:fixed;top:0;left:0;bottom:0;z-index:200;
+}
+.sb-logo{width:34px;height:34px;background:#6d28d9;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:900;margin-bottom:18px}
+.sb-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#6b7a99;cursor:pointer;transition:all .15s;font-size:16px}
+.sb-icon:hover{background:#ffffff12;color:#fff}
+.sb-icon.active{background:#6d28d914;color:#5b21b6}
+.sb-spacer{flex:1}
+
+/* ─── Main wrapper ─── */
+.main{margin-left:60px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* ─── Top bar ─── */
+.topbar{
+  background:#fff;border-bottom:1px solid #e5e7eb;padding:0 28px;
+  height:56px;display:flex;align-items:center;gap:0;
+  position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+.tb-brand{display:flex;align-items:baseline;gap:5px;margin-right:28px}
+.tb-mio{font-size:18px;font-weight:800;color:#6d28d9;letter-spacing:-.3px}
+.tb-beta{font-size:9px;font-weight:700;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:1px 5px;margin-left:3px;vertical-align:super;line-height:1;letter-spacing:.3px;text-transform:uppercase}
+.tb-insights{font-size:16px;font-weight:700;color:#0d1b2a;margin-left:4px}
+.tb-tabs{display:flex;align-items:stretch;height:56px;gap:0}
+.tb-tab{padding:0 20px;border:none;background:transparent;font-size:13px;font-weight:500;color:#6b7280;cursor:pointer;position:relative;font-family:inherit;transition:color .15s}
+.tb-tab:hover{color:#0d1b2a}
+.tb-tab.active{color:#6d28d9;font-weight:600}
+.tb-tab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2.5px;background:#6d28d9;border-radius:2px 2px 0 0}
+
+/* ─── Topbar inline filters ─── */
+.tb-filters{margin-left:auto;display:flex;align-items:center;gap:12px}
+.filter-group{display:flex;align-items:center;gap:8px}
+.filter-lbl{font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.filter-select-wrap{position:relative;display:flex;align-items:center}
+.filter-select-wrap::after{content:'▾';position:absolute;right:10px;font-size:10px;color:#6b7280;pointer-events:none}
+.filter-sel{appearance:none;-webkit-appearance:none;padding:6px 30px 6px 11px;border:1px solid #e5e7eb;border-radius:7px;background:#fff;font-size:12px;font-weight:500;color:#0d1b2a;font-family:inherit;cursor:pointer;outline:none;transition:border-color .15s;min-width:160px}
+.hm-sel{min-width:140px;font-size:11px;padding:5px 26px 5px 9px}
+.filter-sel:hover{border-color:#a5b4fc}
+.filter-sel:focus{border-color:#6d28d9;box-shadow:0 0 0 2px #ede9fe}
+.filter-divider{width:1px;height:24px;background:#e5e7eb;margin:0 4px}
+.custom-range{display:flex;align-items:center;gap:6px}
+.date-input{padding:5px 9px;border:1px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;color:#0d1b2a;outline:none;cursor:pointer;background:#fff;transition:border-color .15s}
+.date-input:focus{border-color:#6d28d9;box-shadow:0 0 0 2px #ede9fe}
+.date-sep{font-size:12px;color:#9ca3af;font-weight:500}
+.apply-btn{padding:5px 14px;border-radius:7px;border:none;background:#6d28d9;color:#fff;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s}
+.apply-btn:hover{background:#5b21b6}
+
+/* ─── Content ─── */
+.content{padding:24px 28px;flex:1}
+
+/* ─── Agent pills (hidden — replaced by filter bar dropdown) ─── */
+.agent-bar{display:none}
+
+/* ─── Config note ─── */
+.config-note{display:flex;align-items:center;gap:8px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:9px 14px;font-size:12px;color:#92400e;margin-bottom:18px}
+.hidden{display:none!important}
+
+/* ─── KPI Row ─── */
+.kpi-row{display:grid;gap:16px;margin-bottom:24px}
+.kpi-card{background:#fff;border-radius:14px;padding:20px 22px 18px;border:1px solid #eaecf0;box-shadow:0 1px 3px rgba(0,0,0,.05);position:relative;overflow:hidden}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.kpi-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.kpi-metric-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;margin-bottom:5px}
+.kpi-value{font-size:24px;font-weight:800;color:#111827;line-height:1;letter-spacing:-.5px;margin-bottom:4px}
+.kpi-sub{font-size:12px;color:#6b7280;font-weight:400;margin-bottom:10px}
+.kpi-delta-row{margin-top:2px}
+.kpi-delta-tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.kpi-delta-tag.up{background:#d1fae5;color:#065f46}
+.kpi-delta-tag.dn{background:#fee2e2;color:#991b1b}
+
+/* ─── Section label ─── */
+.section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#5b21b6;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.section-lbl::after{content:'';flex:1;height:1px;background:#ddd6fe}
+
+/* ─── Grid helpers ─── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+.grid-3c{display:grid;grid-template-columns:1fr 1fr 1.8fr;gap:16px;margin-bottom:22px}
+
+/* ─── Generic card ─── */
+.card{background:#fff;border-radius:10px;padding:22px;border:1px solid #eaecf0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.card-title{font-size:14px;font-weight:700;color:#0d1b2a;margin-bottom:3px}
+.card-sub{font-size:11px;color:#9ca3af;margin-bottom:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:flex-start}
+.chip{background:#f3f4f6;color:#4b5563;font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;border:1px solid #e5e7eb}
+
+/* ─── Agent success table ─── */
+.sc-table{width:100%;border-collapse:collapse}
+.sc-table thead tr{background:#ffffff;border-bottom:2px solid #eaecf0}
+.sc-table thead th{padding:11px 20px;font-size:11px;font-weight:600;color:#9ca3af;text-align:left;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px}
+.sc-table thead th:not(:first-child){text-align:right}
+.sc-table thead th:nth-child(2){text-align:left}
+.sc-table th:first-child,.sc-table td:first-child{width:22%}
+.sc-table th:nth-child(2),.sc-table td:nth-child(2){width:14%;white-space:nowrap}
+.sc-table th:nth-child(3),.sc-table td:nth-child(3){width:16%;text-align:center!important}
+.sc-table th:nth-child(4),.sc-table td:nth-child(4){width:14%}
+.sc-table th:nth-child(5),.sc-table td:nth-child(5){width:18%}
+.sc-table th:nth-child(6),.sc-table td:nth-child(6){width:16%}
+.sc-table tbody tr{border-bottom:1px solid #f3f4f6;transition:background .1s}
+.sc-table tbody tr:last-child{border-bottom:none}
+.sc-table tbody tr:hover{background:#faf9ff}
+.sc-table tbody td{padding:14px 20px;font-size:13px;color:#0d1b2a;vertical-align:middle}
+.sc-table tbody td:not(:first-child){text-align:right;font-weight:600}
+.sc-agent-badge{display:inline-flex;align-items:center;gap:7px}
+.sc-agent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sc-agent-name{font-size:13px;font-weight:600;color:#0d1b2a}
+.sc-agent-type{font-size:11px;color:#9ca3af;font-weight:400}
+.sc-num{font-size:14px;font-weight:700;color:#111827}
+.sc-pct-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.sc-pct-blue{background:#dbeafe;color:#1e40af}
+
+/* ─── Donut ─── */
+.donut-wrap{display:flex;align-items:center;gap:18px}
+.donut-canvas-wrap{position:relative;width:145px;height:145px;flex-shrink:0}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.donut-center-val{font-size:18px;font-weight:800;color:#0d1b2a}
+.donut-center-lbl{font-size:10px;color:#9ca3af;font-weight:500}
+.legend-list{flex:1;display:flex;flex-direction:column;gap:7px}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:12px}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.legend-name{flex:1;color:#4b5563;font-weight:500}
+.legend-count{font-weight:700;color:#0d1b2a;width:34px;text-align:right}
+.legend-pct{color:#9ca3af;width:30px;text-align:right}
+
+/* ─── Sentiment ─── */
+.sentiment-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sent-emoji{font-size:14px;width:20px}
+.sent-lbl{font-size:12px;font-weight:500;width:68px;color:#4b5563}
+.sent-bar-bg{flex:1;height:5px;border-radius:3px;background:#f3f4f6;overflow:hidden}
+.sent-bar-fill{height:100%;border-radius:3px}
+.sent-count{font-size:12px;font-weight:600;width:30px;text-align:right;color:#0d1b2a}
+.sent-pct{font-size:11px;color:#9ca3af;width:28px;text-align:right}
+.sat-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f3f4f6;margin-top:10px;padding-top:11px;font-size:12px;color:#6b7280}
+.sat-val{font-size:20px;font-weight:800;color:#0d1b2a}
+
+/* ─── Top agents ─── */
+.ta-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f9fafb}
+.ta-row:last-child{border-bottom:none}
+.ta-av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.ta-name{font-size:12px;font-weight:600;color:#0d1b2a}
+.ta-type{font-size:10px;color:#9ca3af}
+.ta-prog{flex:1;max-width:100px;display:flex;align-items:center;height:4px}
+.ta-prog-fill{height:4px;border-radius:2px 0 0 2px;flex-shrink:0}
+.ta-prog-dash{flex:1;border-bottom:2px dashed #e5e7eb;height:0}
+.ta-pct{font-size:12px;font-weight:700;width:32px;text-align:right}
+.avg-row{display:flex;justify-content:space-between;align-items:center;background:#f9fafb;border-radius:8px;padding:9px 12px;margin-top:10px;font-size:12px;color:#6b7280;font-weight:500;border:1px solid #e5e7eb}
+.avg-val{font-size:18px;font-weight:800;color:#0d1b2a}
+
+/* ─── Call Intelligence ─── */
+.intel-head{display:flex;gap:0;padding:0 0 8px 150px;border-bottom:1px solid #e5e7eb;margin-bottom:2px}
+.intel-col-head{flex:1;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af}
+.intel-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f9fafb}
+.intel-row:last-child{border-bottom:none}
+.intel-av{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.intel-info{width:108px;flex-shrink:0}
+.intel-name{font-size:12px;font-weight:600;color:#0d1b2a}
+.intel-type{font-size:10px;color:#9ca3af}
+.intel-stats{flex:1;display:flex}
+.intel-stat{flex:1;text-align:center}
+.intel-val{font-size:13px;font-weight:700}
+.intel-lbl{font-size:9px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+
+/* ─── Heatmap ─── */
+.hm-tabs{display:flex;gap:5px;flex-wrap:wrap}
+.hm-tab{padding:4px 11px;border-radius:6px;border:1px solid #e5e7eb;background:#fff;font-size:11px;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s}
+.hm-tab:hover{border-color:#c0c8e0}
+.hm-tab.hm-active{color:#fff;border-color:transparent}
+.heatmap-grid{overflow-x:auto;margin-top:10px}
+.heatmap-table{border-collapse:separate;border-spacing:3px;width:100%}
+.heatmap-table th{font-size:10px;font-weight:600;color:#9ca3af;padding:0 2px 5px;text-align:center}
+.heatmap-table td{height:25px;border-radius:5px;cursor:pointer;transition:transform .12s;position:relative}
+.heatmap-table td:hover{transform:scale(1.1);z-index:2}
+.heatmap-table .row-label{font-size:10px;color:#9ca3af;font-weight:500;text-align:right;padding-right:6px;white-space:nowrap;background:transparent;width:40px}
+.hm-legend{display:flex;align-items:center;gap:5px;margin-top:9px;justify-content:center}
+.hm-legend-lbl{font-size:10px;color:#9ca3af;font-weight:500}
+.hm-legend-step{width:14px;height:9px;border-radius:2px}
+/* ─── Heatmap Insights ─── */
+.hm-insights{display:flex;flex-direction:column;gap:8px}
+.hm-insight-row{display:flex;align-items:flex-start;gap:10px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:10px;padding:9px 12px}
+.hm-insight-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:1px;background:#fff}
+.hm-insight-text{font-size:12px;color:#374151;line-height:1.5}
+.hm-insight-text strong{color:#111827;font-weight:600}
+
+/* ─── Chart ─── */
+.chart-wrap{position:relative;width:100%}
+
+@media(max-width:900px){.grid-2,.grid-3c{grid-template-columns:1fr}}
+
+/* ─── Mobile responsive ─── */
+@media(max-width:768px){
+  body{overflow-x:hidden}
+  .sidebar{display:none}
+  .main{margin-left:0;max-width:100vw;overflow-x:hidden}
+
+  /* Topbar: brand row + filters row stacked */
+  .topbar{flex-wrap:wrap;height:auto;padding:10px 14px 0;gap:0}
+  .tb-brand{margin-right:auto}
+  .tb-tabs{
+    order:3;width:calc(100% + 28px);margin:6px -14px 0;
+    height:38px;border-top:1px solid #f3f4f6;
+    padding:0 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    display:flex;align-items:stretch;flex-shrink:0
+  }
+  .tb-tab{padding:0 14px;font-size:12px;white-space:nowrap}
+
+  /* Filters: full width row, stack two selects side by side */
+  .tb-filters{
+    order:2;margin-left:0;width:100%;
+    flex-wrap:nowrap;gap:8px;padding:6px 0 8px
+  }
+  .filter-group{flex:1;min-width:0;gap:0}
+  .filter-lbl{display:none}
+  .filter-select-wrap{width:100%}
+  .filter-sel{width:100%;min-width:0;font-size:12px;padding:6px 26px 6px 9px}
+  .filter-divider{display:none}
+  .custom-range{flex-wrap:wrap;gap:4px}
+  .date-input{flex:1;min-width:100px}
+
+  /* Content */
+  .content{padding:12px}
+  .kpi-row{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+  .kpi-card{padding:14px 12px 12px}
+  .kpi-value{font-size:20px}
+  .kpi-sub{font-size:11px}
+  .kpi-metric-label{font-size:9px}
+
+  /* Stack all two-col grids */
+  .grid-2,.grid-3c{grid-template-columns:1fr!important;gap:12px}
+
+  /* Heatmap scroll */
+  .heatmap-grid{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .heatmap-table{min-width:310px}
+  .heatmap-table th,.heatmap-table .row-label{font-size:9px}
+
+  /* Heatmap + Insights: stack vertically on mobile */
+  .hm-layout{grid-template-columns:1fr!important;gap:20px}
+  .hm-layout>div:last-child{border-left:none!important;padding-left:0!important;border-top:1px solid #f3f4f6;padding-top:16px}
+  .hm-insights{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hm-insight-row{padding:10px 12px}
+  .hm-insight-text{font-size:12px}
+
+  .card{padding:14px}
+  .card-title{font-size:13px}
+  .section-lbl{font-size:10px}
+}
+@media(max-width:480px){
+  .kpi-row{grid-template-columns:repeat(2,1fr)!important}
+  .tb-tabs{display:none}
+  .topbar{padding:10px 12px 0}
+  .sc-card{overflow:visible!important}
+}
+
+/* ─── Heatmap custom tooltip ─── */
+#hmTooltip{
+  position:fixed;pointer-events:none;z-index:9999;
+  background:#1a1d2e;color:#fff;border-radius:8px;
+  padding:8px 12px;font-size:12px;font-family:'Inter',sans-serif;
+  box-shadow:0 4px 12px rgba(0,0,0,.2);
+  opacity:0;transition:opacity .1s;white-space:nowrap;
+}
+#hmTooltip .hmt-day{font-weight:700;font-size:13px;margin-bottom:2px}
+#hmTooltip .hmt-val{font-size:12px;color:#c4b5fd}
+#hmTooltip .hmt-val.blue{color:#93c5fd}
+
+/* ─── KPI Tooltip ─── */
+.kpi-tooltip-wrap{display:inline-flex;align-items:center;gap:6px;width:100%}
+.kpi-info-icon{
+  width:16px;height:16px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:help;flex-shrink:0;position:relative;
+  transition:all .2s;
+  color:#9ca3af;
+}
+.kpi-info-icon:hover{color:#6b7280}
+.kpi-tooltip{
+  position:fixed;
+  background:#1a1d2e;color:#fff;border-radius:8px;
+  padding:10px 14px;font-size:11px;line-height:1.5;
+  white-space:normal;z-index:1000;
+  opacity:0;visibility:hidden;transition:all .2s;
+  pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.2);
+  max-width:220px;
+}
+.kpi-tooltip::after{
+  content:'';position:absolute;bottom:100%;left:50%;
+  transform:translateX(-50%);
+  border:4px solid transparent;border-bottom-color:#1a1d2e;
+}
+.kpi-info-icon:hover .kpi-tooltip{
+  opacity:1;visibility:visible;
+}
+</style>
+</head>
+<body>
+
+<div id="hmTooltip"><div class="hmt-day"></div><div class="hmt-val"></div></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-logo">M</div>
+  <div class="sb-icon active">⊞</div>
+  <div class="sb-icon">↗</div>
+  <div class="sb-icon">⊕</div>
+  <div class="sb-icon">↺</div>
+  <div class="sb-spacer"></div>
+  <div class="sb-icon">👤</div>
+  <div class="sb-icon">?</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="tb-brand">
+      <span class="tb-mio">Mio AI</span><sup class="tb-beta">Beta</sup>
+      <span class="tb-insights">Insights</span>
+    </div>
+    <nav class="tb-tabs">
+      <button class="tb-tab" onclick="switchTab(this)">AI Guide</button>
+      <button class="tb-tab active" onclick="switchTab(this)">AI Voice</button>
+    </nav>
+    <div class="tb-filters">
+      <div class="filter-group">
+        <span class="filter-lbl">Agent</span>
+        <div class="filter-select-wrap">
+          <select class="filter-sel" id="agentFilter" onchange="filterAgent(this.value)">
+            <option value="all">All Agents</option>
+            <option value="lq">Lead Qualification Agent</option>
+            <option value="lr">Lead Reactivation Agent</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <span class="filter-lbl">Date Range</span>
+        <div class="filter-select-wrap">
+          <select class="filter-sel" id="dateFilter" onchange="handleDateFilter(this.value)">
+            <option value="1d">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="7d">Last 7 Days</option>
+            <option value="30d" selected>Last 30 Days</option>
+            <option value="90d">Last 90 Days</option>
+            <option value="month">This Month</option>
+            <option value="custom">Custom Range…</option>
+          </select>
+        </div>
+        <div class="custom-range hidden" id="customRange">
+          <span class="date-sep">From</span>
+          <input type="date" class="date-input" id="dateFrom"/>
+          <span class="date-sep">To</span>
+          <input type="date" class="date-input" id="dateTo"/>
+          <button class="apply-btn" onclick="applyCustomRange()">Apply</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Agent pills -->
+    <div class="agent-bar">
+      <span class="bar-lbl">View:</span>
+      <button class="agent-pill active" onclick="filterAgent('all')" id="pill-all">All Agents</button>
+      <button class="agent-pill" onclick="filterAgent('lq')" id="pill-lq">
+        <span class="dot" style="background:#5b21b6"></span>Lead Qualification
+      </button>
+      <button class="agent-pill" onclick="filterAgent('lr')" id="pill-lr">
+        <span class="dot" style="background:#4c1d95"></span>Lead Reactivation
+      </button>
+    </div>
+
+    <!-- Config note -->
+    <div class="config-note hidden" id="configNote">
+      <span>ℹ️</span><span id="configNoteText"></span>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row" id="kpiRow" style="grid-template-columns:repeat(5,1fr)"></div>
+
+    <!-- Agent Success -->
+    <div class="section-lbl">Your Agent's Success</div>
+    <div class="card sc-card" style="margin-bottom:22px;padding:0;overflow:hidden">
+      <div id="successCards"></div>
+    </div>
+
+    <!-- Outcomes Over Time -->
+    <div class="card" style="margin-bottom:22px">
+      <div class="flex-between">
+        <div><div class="card-title">Outcomes Over Time</div><div class="card-sub" id="lineSubtitle">Daily trends — last 14 days</div></div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="lineChart"></canvas></div>
+    </div>
+
+    <!-- Call Connection Heatmap + Insights -->
+    <div class="card" style="margin-bottom:22px">
+      <div class="hm-layout" style="display:grid;grid-template-columns:1.6fr 1fr;gap:28px;align-items:stretch">
+
+        <!-- Left: Heatmap -->
+        <div>
+          <div style="margin-bottom:10px">
+            <div class="card-title">Call Connection Heatmap</div>
+            <div class="card-sub" style="margin-bottom:0">Peak time when your call connection is highest.</div>
+          </div>
+          <div class="heatmap-grid">
+            <table class="heatmap-table" id="hmTableConn"></table>
+          </div>
+          <div class="hm-legend">
+            <span class="hm-legend-lbl">Low</span>
+            <div id="hmLegendConn" style="display:flex;gap:2px;align-items:center"></div>
+            <span class="hm-legend-lbl">High</span>
+          </div>
+        </div>
+
+        <!-- Right: Insights -->
+        <div style="display:flex;flex-direction:column;border-left:1px solid #f3f4f6;padding-left:28px;min-height:100%">
+          <div class="card-title" style="margin-bottom:4px">Heatmap Insights</div>
+          <div class="card-sub" style="margin-bottom:14px">Key patterns from your call connection data.</div>
+          <div class="hm-insights" id="hmInsightsConn" style="flex:1;justify-content:space-between"></div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════
+const AGENTS = {
+  lq:{
+    id:'lq',name:'Lead Qualification Agent',short:'Lead Qualification',abbr:'LQ',
+    type:'Lead Qualification',desc:'Qualifies leads for you and your team',color:'#5b21b6',bgLight:'#ede9fe',
+    successMetric:'Leads Qualified',outcomeLabel:'Leads Qualified',
+    records:450,attempts:500,connected:408,
+    successVal:360,successRate:72,dnc:30,voicemail:62,
+  },
+  lr:{
+    id:'lr',name:'Lead Reactivation Agent',short:'Lead Reactivation',abbr:'LR',
+    type:'Lead Reactivation',desc:'Calls the leads with low or no engagement in the past',color:'#7c3aed',bgLight:'#f0ebff',
+    successMetric:'Leads Reactivated',outcomeLabel:'Leads Reactivated',
+    records:160,attempts:200,connected:155,
+    successVal:130,successRate:65,dnc:20,voicemail:25,
+  },
+};
+const HEATMAP={
+  lq:{
+    outcome:    [[40,50,60,80,70,20,15],[55,65,85,90,75,25,18],[60,80,100,100,90,30,20],[50,70,85,88,80,22,16],[45,60,75,82,70,18,14],[35,55,65,70,60,15,10],[30,45,55,60,50,12,8],[25,40,50,55,45,10,6],[20,35,42,48,38,8,5],[15,28,35,42,32,6,4],[10,22,28,35,25,5,3],[7,15,22,28,18,4,2],[5,10,15,22,14,3,2]],
+    // 9AM(dim) → ramp up → 11AM-3PM peak → 5PM drop → 6PM-9PM very dim
+    connection: [
+      [26,30,36,40,34,16,10],  // 9 AM  — early, dim
+      [44,52,62,66,56,26,18],  // 10 AM — warming up
+      [62,70,82,86,76,36,26],  // 11 AM — peak
+      [58,66,78,82,72,33,24],  // 12 PM — peak
+      [54,63,75,80,68,30,22],  // 1 PM  — peak
+      [56,65,77,82,70,31,23],  // 2 PM  — peak
+      [58,68,80,84,74,33,24],  // 3 PM  — peak
+      [48,58,68,73,63,25,18],  // 4 PM  — tapering
+      [36,44,54,58,50,18,12],  // 5 PM  — dropping
+      [24,30,38,42,34,12,7],   // 6 PM  — evening, dim
+      [16,20,26,30,24,8,5],    // 7 PM  — dim
+      [10,14,18,22,16,5,3],    // 8 PM  — very dim
+      [6, 9, 12,15,10,3,2],    // 9 PM  — very dim
+    ],
+  },
+  lr:{
+    outcome:    [[30,40,50,55,45,35,20],[45,55,65,70,60,40,25],[50,65,75,80,70,38,22],[55,70,88,92,78,30,18],[50,68,80,85,72,25,15],[40,58,70,75,62,20,12],[35,50,60,65,55,15,10],[28,42,52,58,48,12,8],[22,36,44,50,40,10,6],[16,28,36,42,32,8,4],[10,20,28,34,26,6,3],[7,14,22,28,20,4,2],[4,10,15,22,14,3,1]],
+    connection: [
+      [20,24,30,34,28,12,7],   // 9 AM  — early, dim
+      [36,44,54,58,48,22,14],  // 10 AM — warming up
+      [54,62,74,78,66,30,20],  // 11 AM — peak
+      [50,58,70,74,62,27,18],  // 12 PM — peak
+      [46,56,67,72,60,24,16],  // 1 PM  — peak
+      [48,58,69,74,62,25,17],  // 2 PM  — peak
+      [52,62,73,77,65,27,19],  // 3 PM  — peak
+      [42,52,62,67,56,20,14],  // 4 PM  — tapering
+      [30,38,47,52,44,14,9],   // 5 PM  — dropping
+      [18,24,32,36,28,9,5],    // 6 PM  — evening, dim
+      [12,16,22,26,20,6,4],    // 7 PM  — dim
+      [7, 11,15,18,13,4,2],    // 8 PM  — very dim
+      [4, 7, 10,13, 8,2,1],    // 9 PM  — very dim
+    ],
+  },
+};
+
+const PERIOD_DATA={
+  '7d':{
+    lq:{records:105,attempts:132,connected:100,successVal:76,successRate:58},
+    lr:{records:38, attempts:48, connected:36, successVal:23, successRate:48},
+  },
+  '30d':{
+    lq:{records:450,attempts:500,connected:408,successVal:360,successRate:72},
+    lr:{records:160,attempts:200,connected:155,successVal:130,successRate:65},
+  },
+  '90d':{
+    lq:{records:1320,attempts:1480,connected:1198,successVal:1050,successRate:71},
+    lr:{records:480, attempts:610, connected:467, successVal:390, successRate:64},
+  },
+  'month':{
+    lq:{records:380,attempts:420,connected:340,successVal:298,successRate:70},
+    lr:{records:135,attempts:170,connected:130,successVal:108,successRate:64},
+  },
+};
+const PERIOD_DELTAS={
+  '7d':    {attempts:'▲ 4.2% vs prior', conn:'▲ 1.9% vs prior', goal:'▲ 3.8% YoY'},
+  '30d':   {attempts:'▲ 8.3% vs prior', conn:'▲ 5.1% vs prior', goal:'▲ 11.2% YoY'},
+  '90d':   {attempts:'▲ 12.7% vs prior',conn:'▲ 9.3% vs prior', goal:'▲ 18.6% YoY'},
+  'month': {attempts:'▲ 7.2% vs prior', conn:'▲ 4.3% vs prior', goal:'▲ 9.8% YoY'},
+};
+const LINE_DATA={
+  '7d':{
+    labels:['Mar 11','Mar 12','Mar 13','Mar 14','Mar 15','Mar 16','Mar 17'],
+    lq:[58,62,59,65,63,67,64], lr:[48,51,49,55,53,57,54],
+    sub:'Daily trends — last 7 days',
+  },
+  '30d':{
+    labels:['Feb 25','Feb 26','Feb 27','Feb 28','Mar 1','Mar 2','Mar 3','Mar 4','Mar 5','Mar 6','Mar 7','Mar 8','Mar 9','Mar 10'],
+    lq:[66,69,64,71,72,68,73,70,74,71,75,72,76,73],
+    lr:[57,60,55,63,64,60,65,62,67,64,68,65,69,66],
+    sub:'Daily trends — last 14 days',
+  },
+  '90d':{
+    labels:['Jan W1','Jan W2','Jan W3','Jan W4','Feb W1','Feb W2','Feb W3','Feb W4','Mar W1','Mar W2'],
+    lq:[60,62,64,65,67,68,70,71,72,74], lr:[50,52,54,56,57,59,61,63,64,66],
+    sub:'Weekly trends — last 90 days',
+  },
+  'month':{
+    labels:['Mar 1','Mar 3','Mar 5','Mar 7','Mar 9','Mar 11','Mar 13','Mar 15','Mar 17'],
+    lq:[68,70,69,72,71,73,72,74,73], lr:[59,61,60,63,62,64,63,65,64],
+    sub:'Daily trends — this month',
+  },
+};
+
+let activeAgents=['lq','lr'],activeFilter='all',activePeriod='30d',activeOutcomeAgent='all',activeConnAgent='all',activeDayCount=30;
+let lineChart=null;
+
+// ─── Tab switch ───
+function switchTab(btn){
+  document.querySelectorAll('.tb-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── Date filter ───
+function handleDateFilter(val){
+  const cr=document.getElementById('customRange');
+  if(val==='custom'){cr.classList.remove('hidden');return;}
+  cr.classList.add('hidden');
+  activePeriod=val==='1d'||val==='yesterday'?'30d':val;
+  activeDayCount={
+    '1d':1,'yesterday':1,'7d':7,'30d':30,'90d':90,'month':30
+  }[val]||30;
+  renderDynamic();
+}
+function applyCustomRange(){
+  const from=document.getElementById('dateFrom').value;
+  const to=document.getElementById('dateTo').value;
+  if(!from||!to){alert('Please select both From and To dates.');return;}
+  const diff=Math.round((new Date(to)-new Date(from))/(1000*60*60*24))+1;
+  activeDayCount=diff>0?diff:1;
+  activePeriod=activeDayCount>=30?'30d':activeDayCount>=7?'7d':'30d';
+  renderDynamic();
+}
+
+// ─── Agent Filter ───
+function filterAgent(id){
+  activeFilter=id;
+  renderDynamic();
+}
+function renderAll(){filterAgent('all');}
+function renderDynamic(){
+  const agents=activeFilter==='all'?activeAgents.map(id=>AGENTS[id]):[AGENTS[activeFilter]];
+  renderConfigNote(agents);renderKPIs(agents);renderSuccessCards(agents);
+  renderLine(agents);
+  buildHeatmaps(agents);
+}
+
+// ─── Period data helper ───
+function getPData(agent){
+  const p=PERIOD_DATA[activePeriod]||PERIOD_DATA['30d'];
+  return Object.assign({},agent,p[agent.id]||{});
+}
+
+// ─── Config note ───
+function renderConfigNote(agents){
+  const el=document.getElementById('configNote');
+  if(activeFilter==='all'){el.classList.add('hidden');return;}
+  el.classList.remove('hidden');
+  document.getElementById('configNoteText').textContent=`Showing data for ${agents[0].name} only.`;
+}
+
+// ─── KPI Cards ───
+function renderKPIs(agents){
+  const row=document.getElementById('kpiRow');
+  const pd=agents.map(a=>getPData(a));
+  const totalRecords =pd.reduce((s,a)=>s+a.records,0);
+  const totalAttempts=pd.reduce((s,a)=>s+a.attempts,0);
+  const totalConn    =pd.reduce((s,a)=>s+a.connected,0);
+  const totalGoal    =pd.reduce((s,a)=>s+a.successVal,0);
+  const avgGoal      =Math.round(pd.reduce((s,a)=>s+a.successRate,0)/pd.length);
+  const connRate     =Math.round(totalConn/totalAttempts*100);
+  const attPerRec    =(totalAttempts/totalRecords).toFixed(1);
+  const deltas=PERIOD_DELTAS[activePeriod]||PERIOD_DELTAS['30d'];
+
+  const tooltips={
+    Connected:'Unique contacts who successfully connected with an agent',
+    'Avg Attempts / Contact':'Average call attempts required to establish a connection per contact',
+    'Goal Achieved':'Contacts successfully qualified or reactivated by any agent'
+  };
+
+  const cards=[
+    {
+      label:'Unique Contacts Attempted', value:totalRecords, sub:'Across all agents',
+      badge:null, tooltip:null,
+      iconBg:'#ede9fe', iconColor:'#6d28d9',
+      icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    },
+    {
+      label:'Connected', value:`${connRate}%`, sub:`${totalConn.toLocaleString()} contacts connected`,
+      badge:{text:deltas.conn}, tooltip:tooltips.Connected,
+      iconBg:'#dbeafe', iconColor:'#2563eb',
+      icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+    },
+    {
+      label:'Avg Attempts / Contact', value:`${attPerRec}x`, sub:`${totalAttempts.toLocaleString()} calls made`,
+      badge:{text:deltas.attempts}, tooltip:tooltips['Avg Attempts / Contact'],
+      iconBg:'#d1fae5', iconColor:'#059669',
+      icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.08-1.08a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.73 16z"/></svg>`,
+    },
+    {
+      label:'Goal Achieved', value:totalGoal.toLocaleString(), sub:`${avgGoal}% goal achieved`,
+      badge:{text:deltas.goal}, tooltip:tooltips['Goal Achieved'],
+      iconBg:'#fef3c7', iconColor:'#d97706',
+      icon:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    },
+  ];
+
+  row.style.gridTemplateColumns='repeat(4,1fr)';
+  row.innerHTML=cards.map(c=>`
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <div class="kpi-metric-label" style="margin-bottom:0;position:relative">
+          <div class="kpi-tooltip-wrap">
+            ${c.label}
+            ${c.tooltip?`<div class="kpi-info-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><div class="kpi-tooltip">${c.tooltip}</div></div>`:''}
+          </div>
+        </div>
+        <div class="kpi-icon" style="background:${c.iconBg};color:${c.iconColor}">${c.icon}</div>
+      </div>
+      <div class="kpi-value">${c.value}</div>
+      ${c.sub?`<div class="kpi-sub">${c.sub}</div>`:''}
+      ${c.badge?`<div class="kpi-delta-row"><span class="kpi-delta-tag up">${c.badge.text}</span></div>`:''}
+    </div>`).join('');
+}
+
+// ─── Success Table ───
+function renderSuccessCards(agents){
+  const el=document.getElementById('successCards');
+  el.innerHTML=`
+  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+  <table class="sc-table">
+    <thead>
+      <tr>
+        <th>Agent</th>
+        <th>Goal</th>
+        <th>Unique Contacts Attempted</th>
+        <th>Connected</th>
+        <th>Avg Attempts / Contact</th>
+        <th>Goal Achieved</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${agents.map(a=>{
+        const pd=getPData(a);
+        const connPct=Math.round(pd.connected/pd.attempts*100);
+        return`<tr>
+          <td>
+            <div class="sc-agent-badge">
+              <div class="sc-agent-dot" style="background:${a.color}"></div>
+              <div>
+                <div class="sc-agent-name">${a.name}</div>
+              </div>
+            </div>
+          </td>
+          <td style="text-align:left;white-space:nowrap"><span style="display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;background:${a.bgLight};color:${a.color};white-space:nowrap">${a.type}</span></td>
+          <td><span class="sc-num">${pd.records.toLocaleString()}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+              <span class="sc-num">${pd.connected.toLocaleString()}</span>
+              <span class="sc-pct-pill sc-pct-blue">${connPct}%</span>
+            </div>
+          </td>
+          <td>
+            <div style="font-size:15px;font-weight:800;color:#111827;line-height:1">${(pd.attempts/pd.records).toFixed(1)}x</div>
+            <div style="font-size:11px;color:#9ca3af;font-weight:400;margin-top:2px">${pd.attempts.toLocaleString()} calls made</div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+              <span class="sc-num">${pd.successVal.toLocaleString()}</span>
+              <span class="sc-pct-pill" style="background:${a.color}1a;color:${a.color}">${pd.successRate}%</span>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+  </div>`;
+}
+
+// ─── Line Chart ───
+function renderLine(agents){
+  const periodLine=LINE_DATA[activePeriod]||LINE_DATA['30d'];
+  const labels=periodLine.labels;
+  const LINE_COLORS=['#5b21b6','#2563eb','#059669','#d97706'];
+  const datasets=agents.map((a,i)=>{
+    const c=LINE_COLORS[i]||a.color;
+    const data=periodLine[a.id]||labels.map(()=>Math.round(a.successRate));
+    return{label:a.short,data,
+      borderColor:c,backgroundColor:c+'22',borderWidth:2,pointRadius:3,pointBackgroundColor:c,tension:.4,fill:agents.length===1};
+  });
+  const periodLabel={'7d':'last 7 days','30d':'last 30 days','90d':'last 90 days','month':'this month'};
+  document.getElementById('lineSubtitle').textContent=`Your agent's success over the ${periodLabel[activePeriod]||'last 30 days'}`;
+  const ctx=document.getElementById('lineChart').getContext('2d');
+  if(lineChart) lineChart.destroy();
+  lineChart=new Chart(ctx,{type:'line',data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{position:'bottom',align:'center',labels:{usePointStyle:true,pointStyle:'circle',font:{size:11},boxWidth:8,padding:20}},
+        tooltip:{
+          mode:'index',intersect:false,
+          backgroundColor:'#fff',borderColor:'#e5e7eb',borderWidth:1,
+          titleColor:'#4b5563',bodyColor:'#4b5563',
+          titleFont:{size:11,weight:'600'},bodyFont:{size:12},
+          padding:10,
+          callbacks:{label:ctx=>`  ${ctx.dataset.label}: ${ctx.raw}%`}
+        }
+      },
+      scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#9ca3af'}},
+              y:{grid:{color:'#f3f4f6'},ticks:{font:{size:10},color:'#9ca3af',callback:v=>v+'%'},min:0,max:100}},
+      animation:{duration:500}}});
+}
+
+// ─── Heatmap (connection only, follows global agent filter) ───
+function buildHeatmaps(agents){
+  const agentId=agents.length===1?agents[0].id:'all';
+  _renderHmGrid('connection', agentId, agents);
+}
+function _populateHmSelect(selId, agents, activeId){
+  const sel=document.getElementById(selId);
+  sel.innerHTML=agents.map(a=>`<option value="${a.id}"${a.id===activeId?' selected':''}>${a.name}</option>`).join('');
+}
+// Average heatmap data across all provided agents
+function _avgHeatmapData(mode, agents){
+  const rows=13, cols=7;
+  return Array.from({length:rows},(_,r)=>
+    Array.from({length:cols},(_,c)=>
+      Math.round(agents.reduce((s,a)=>s+HEATMAP[a.id][mode][r][c],0)/agents.length)
+    )
+  );
+}
+function _renderHmGrid(mode, agentId, agents){
+  const isAll=agentId==='all';
+  const a=isAll?agents[0]:AGENTS[agentId];
+  const data=isAll?_avgHeatmapData(mode,agents):HEATMAP[agentId][mode];
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hours=['9 AM','10 AM','11 AM','12 PM','1 PM','2 PM','3 PM','4 PM','5 PM','6 PM','7 PM','8 PM','9 PM'];
+  const tableId=mode==='outcome'?'hmTableOutcome':'hmTableConn';
+  const legendId=mode==='outcome'?'hmLegendOutcome':'hmLegendConn';
+  // Outcome: purple opacity ramp; Connection: near-white → deep navy with power curve for contrast
+  const cfn=mode==='outcome'
+    ? v=>`rgba(${hexToRgb(a.color)},${0.06+(v/100)*0.92})`
+    : v=>{
+        const t=Math.pow(v/100,0.7);
+        const r=Math.round(238+(8-238)*t);
+        const g=Math.round(247+(20-247)*t);
+        const b=Math.round(255+(95-255)*t);
+        return`rgb(${r},${g},${b})`;
+      };
+  let html='<thead><tr><th></th>'+days.map(d=>`<th>${d}</th>`).join('')+'</tr></thead><tbody>';
+  hours.forEach((h,ri)=>{
+    html+=`<tr><td class="row-label">${h}</td>`;
+    days.forEach((_,ci)=>{const v=data[ri][ci];const valCls=mode==='connection'?'blue':'';html+=`<td style="background:${cfn(v)}" onmousemove="showHmTip(event,'${days[ci]}','${h}',${v},'${valCls}')" onmouseleave="hideHmTip()"></td>`;});
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById(tableId).innerHTML=html;
+  const steps=[8,22,40,58,75,92];
+  document.getElementById(legendId).innerHTML=steps.map(v=>`<div class="hm-legend-step" style="background:${cfn(v)}"></div>`).join('');
+
+  // ── Insights ──
+  const insightId=mode==='outcome'?'hmInsightsOutcome':'hmInsightsConn';
+  const metric=mode==='outcome'?'goal achievement':'connection rate';
+  const accentBg=mode==='outcome'?a.color+'18':'#dbeafe';
+  const accentTxt=mode==='outcome'?a.color:'#1e40af';
+
+  // find peak cell
+  let peakVal=0,peakR=0,peakC=0;
+  data.forEach((row,ri)=>row.forEach((v,ci)=>{if(v>peakVal){peakVal=v;peakR=ri;peakC=ci;}}));
+  // find best day (avg across hours)
+  const dayAvg=days.map((_,ci)=>Math.round(data.reduce((s,row)=>s+row[ci],0)/data.length));
+  const bestDayIdx=dayAvg.indexOf(Math.max(...dayAvg));
+  const worstDayIdx=dayAvg.indexOf(Math.min(...dayAvg));
+  // find best hour (avg across days)
+  const hourAvg=hours.map((_,ri)=>Math.round(data[ri].reduce((s,v)=>s+v,0)/days.length));
+  const bestHourIdx=hourAvg.indexOf(Math.max(...hourAvg));
+  // weekend vs weekday
+  const weekdayAvg=Math.round([0,1,2,3,4].reduce((s,ci)=>s+dayAvg[ci],0)/5);
+  const weekendAvg=Math.round([5,6].reduce((s,ci)=>s+dayAvg[ci],0)/2);
+
+  // second best hour
+  const sortedHourAvg=[...hourAvg].sort((a,b)=>b-a);
+  const secondBestHourIdx=hourAvg.indexOf(sortedHourAvg[1]);
+  // worst hour
+  const worstHourIdx=hourAvg.indexOf(Math.min(...hourAvg));
+  // drop-off: difference between peak and worst hour
+  const dropOff=hourAvg[bestHourIdx]-hourAvg[worstHourIdx];
+
+  const allInsights=[
+    {icon:'🏆', bg:accentBg,   always:true,  txt:`<strong>${hours[peakR]} on ${days[peakC]}</strong> is your peak slot with <strong>${peakVal}%</strong> ${metric}.`},
+    {icon:'📅', bg:accentBg,   always:false, txt:`<strong>${days[bestDayIdx]}</strong> is your strongest day with an avg ${metric} of <strong>${dayAvg[bestDayIdx]}%</strong>. Prioritise outreach here.`},
+    {icon:'⏰', bg:accentBg,   always:true,  txt:`<strong>${hours[bestHourIdx]}</strong> and <strong>${hours[secondBestHourIdx]}</strong> are your two best calling hours — avg <strong>${hourAvg[bestHourIdx]}%</strong> and <strong>${hourAvg[secondBestHourIdx]}%</strong> respectively.`},
+    {icon:'📉', bg:'#fef3c7', always:false, txt:`<strong>${days[worstDayIdx]}</strong> consistently underperforms (avg <strong>${dayAvg[worstDayIdx]}%</strong>). Avoid heavy scheduling on this day.`},
+    {icon:'📊', bg:'#f3f4f6', always:false, txt:`Weekday ${metric} averages <strong>${weekdayAvg}%</strong> vs <strong>${weekendAvg}%</strong> on weekends — a <strong>${Math.abs(weekdayAvg-weekendAvg)}%</strong> ${weekdayAvg>weekendAvg?'weekday advantage':'weekend advantage'}.`},
+  ];
+  const insights=activeDayCount<7?allInsights.filter(i=>i.always):allInsights;
+  const el=document.getElementById(insightId);
+  el.style.justifyContent=insights.length<5?'flex-start':'space-between';
+  el.innerHTML=insights.map(i=>`
+    <div class="hm-insight-row">
+      <div class="hm-insight-icon">${i.icon}</div>
+      <div class="hm-insight-text">${i.txt}</div>
+    </div>`).join('');
+}
+function hexToRgb(hex){return`${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`}
+
+// ─── Heatmap tooltip ───
+function showHmTip(e, day, hour, val, valCls){
+  const tip=document.getElementById('hmTooltip');
+  tip.querySelector('.hmt-day').textContent=`${day} · ${hour}`;
+  const valEl=tip.querySelector('.hmt-val');
+  valEl.textContent=`${val}% conversion rate`;
+  valEl.className='hmt-val'+(valCls?' '+valCls:'');
+  tip.style.opacity='1';
+  const x=e.clientX, y=e.clientY;
+  const tw=tip.offsetWidth||140, th=tip.offsetHeight||52;
+  tip.style.left=(x+14+tw>window.innerWidth ? x-tw-8 : x+14)+'px';
+  tip.style.top =(y-th-8<0 ? y+14 : y-th-8)+'px';
+}
+function hideHmTip(){document.getElementById('hmTooltip').style.opacity='0';}
+
+// ─── KPI Tooltip positioning ───
+document.addEventListener('mouseover',e=>{
+  if(e.target.closest('.kpi-info-icon')){
+    const icon=e.target.closest('.kpi-info-icon');
+    const tooltip=icon.querySelector('.kpi-tooltip');
+    if(tooltip){
+      const rect=icon.getBoundingClientRect();
+      const tipW=tooltip.offsetWidth||150;
+      const tipH=tooltip.offsetHeight||40;
+      let left=rect.left+rect.width/2-tipW/2;
+      let top=rect.top+rect.height+8;
+      // clamp horizontally
+      if(left<8)left=8;
+      if(left+tipW>window.innerWidth-8)left=window.innerWidth-tipW-8;
+      tooltip.style.left=left+'px';
+      tooltip.style.top=top+'px';
+    }
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>
